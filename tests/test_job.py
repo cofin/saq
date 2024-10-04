@@ -56,8 +56,10 @@ class TestJob(unittest.IsolatedAsyncioTestCase):
         await self.job.enqueue()
         self.assertEqual(queued, self.job.queued)
 
+        queue2 = await self.create_queue(name="queue2")
         with self.assertRaises(ValueError):
-            await self.job.enqueue(await self.create_queue(name="queue2"))
+            await self.job.enqueue(queue2)
+        await queue2.disconnect()
 
     async def test_finish(self) -> None:
         await self.job.finish(Status.COMPLETE, result={})
@@ -157,7 +159,7 @@ class TestJobPostgresQueue(TestJob):
 
         self.assertEqual(self.job.status, Status.QUEUED)
         task = asyncio.create_task(self.job.refresh(1))
-        await asyncio.sleep(0)
+        await asyncio.sleep(0.1)
         await self.job.finish(Status.COMPLETE)
         await task
         self.assertEqual(self.job.status, Status.COMPLETE)
